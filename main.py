@@ -368,27 +368,31 @@ def run_file():
 
 # setup an updater to check if the github repo has a new version in the versions list
 def update():
-    # get the latest version from the server
-    r = requests.get('https://example.com/versions.json')
-    if r.status_code == 200:
-        # parse the JSON data
-        try:
-            versions = json.loads(r.content)
-        except json.JSONDecodeError as e:
-            print('Error decoding JSON data:', e)
-            return
-        # check if the latest version is newer than the current version
-        if current_version in versions:
-            print('You have the latest version')
+        global current_version
+        # get the latest version from the server
+        r = requests.get('https://raw.githubusercontent.com/charlie-sans/OpenStudioPyIDE/main/versions.json')
+        if r.status_code == 200:
+                # parse the JSON data
+                try:
+                        data = json.loads(r.content)
+                        with open('version.txt', 'r') as f:
+                                current_version = f.read().strip()
+                        versions = [v['version'] for v in data]
+                except json.JSONDecodeError as e:
+                        print('Error decoding JSON data:', e)
+                        return
+                # check if the latest version is newer than the current version
+                if current_version in versions:
+                        print('You have the latest version')
+                else:
+                        latest_version = max(versions)
+                        print('There is a new version available, please update')
+                        print('Your version: {current_version}'.format(current_version=current_version))
+                        print('Latest version: {latest_version}'.format(latest_version=latest_version))
+                        print('Please update at github.com/Charlie-sans/OpenStudioPyIDE')
+                        print('Or run the updater')
         else:
-            latest_version = max(versions)
-            print('There is a new version available, please update')
-            print('Your version: {current_version}'.format(current_version=current_version))
-            print('Latest version: {latest_version}'.format(latest_version=latest_version))
-            print('Please update at github.com/Charlie-sans/OpenStudioPyIDE')
-            print('Or run the updater')
-    else:
-        print('Error getting version information:', r.status_code)
+                print('Error getting version information:', r.status_code)
 
 
 # connect signals and slots
