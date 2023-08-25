@@ -1,0 +1,4 @@
+welcome to the help section for the OpenStudioPyIDE
+
+if you have any questions, please contact us at
+https://discord.gg/7cFCB8qBkf

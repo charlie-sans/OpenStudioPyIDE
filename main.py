@@ -11,9 +11,11 @@ import argparse
 import datetime
 import gzip
 import configparser
+import subprocess
 from PyQt6.QtWidgets import QApplication, QMainWindow, QTextEdit, QFileDialog,QAbstractButton,QAbstractGraphicsShapeItem,QAbstractItemDelegate
 #setup varibalbes
 config_file = 'config.ini'
+current_file = ''
 
 
 
@@ -50,12 +52,11 @@ try:
         config_file = 'config.ini'
         configparser = configparser.ConfigParser()
         configparser.read(config_file)
-        background = configparser['DEFAULT']['project']
-        color = configparser['DEFAULT']['project']
-        theme = configparser['DEFAULT']['project']
-        font = configparser['DEFAULT']['project']
-        font_size = configparser['DEFAULT']['project']
+        background = configparser['IDE']['background']
+        color = configparser['IDE']['color']
+        theme = configparser['IDE']['theme']
     else:
+        print('No config file found, using default settings')
         background = 'white'
         color = 'black'
         theme = 'light'
@@ -66,7 +67,28 @@ except Exception as e:
     logging.error('Error: {e}'.format(e))
     print('Error: {e}'.format(e))
     sys.exit(1)
-# setup main window without using classes
+
+if theme == 'light':
+        background = 'white'
+        color = 'black'
+        font = 'Arial'
+        font_size = '12'
+elif theme == 'dark':
+        background = 'black'
+        color = 'white'
+        font = 'Arial'
+        font_size = '12'
+elif theme == 'water':
+        background = 'blue'
+        color = 'white'
+        font = 'Arial'
+        font_size = '12'
+elif theme == 'fire':
+      background = 'red'
+      color = 'orange'
+      font = 'Arial'
+      font_size = '12'
+      
 
 # setup main window
 
@@ -157,21 +179,25 @@ def new_file():
             f.write('')
     
 
-def open_file():
+def open_file(file_name=None):
     status_bar.showMessage('Open File')
     logging.info('Open File')
 
-    # open the default dialog to open a file
-    dialog = QFileDialog()
-    options = dialog.options()
-
-    file_name, _ = dialog.getOpenFileName(window, "Open File", "", "All Files (*);;Text Files (*.txt)", options=options)
     if file_name:
         with open(file_name, 'r') as f:
             text_editor.setPlainText(f.read())
+    else:
+        # open the default dialog to open a file
+        dialog = QFileDialog()
+        options = dialog.options()
+
+        file_name, _ = dialog.getOpenFileName(window, "Open File", "", "All Files (*);;Text Files (*.txt)", options=options)
+        if file_name:
+            with open(file_name, 'r') as f:
+                text_editor.setPlainText(f.read())
     
 
-current_file = ''
+
 
 def save_file():
     global current_file
@@ -280,6 +306,7 @@ def run_selection_file():
         logging.info('Run Selection File')
 
 def run_configuration_file():
+        open_file("config.ini")
         status_bar.showMessage('Run Configuration File')
         logging.info('Run Configuration File')
 
@@ -288,8 +315,53 @@ def about_file():
         logging.info('About File')
 
 def help_file():
+        app = QApplication(sys.argv)
+        window = QMainWindow()
+        window.setWindowTitle('OpenStudioPyIDE')
+        window.setGeometry(100, 100, 800, 600)
+        text_box = QTextEdit()
+        text_box.setReadOnly(True)
+        window.setCentralWidget(text_box)
+        try:
+                with open('help.txt', 'r') as f:
+                        text_box.setPlainText(f.read())
+        except FileNotFoundError:
+                print('Help file not found')
+        except Exception as e:
+                logging.error('Error: {e}'.format(e))
         status_bar.showMessage('Help File')
         logging.info('Help File')
+
+# setup run file sections for detecting if the file has an extention then run it
+
+
+def run_file():
+        global current_file
+
+        if current_file:
+                ext = os.path.splitext(current_file)[1]
+
+                try:
+                        if ext == '.py':
+                                # run a Python file
+                                exec(open(current_file).read())
+                        elif ext == '.cs':
+                                subprocess.Popen(['dotnet run', current_file])
+                                pass
+                        elif ext == '.js':
+                                subprocess.Popen(['node', current_file])
+                                pass
+                        else:
+                                # unsupported file type
+                                raise Exception('Unsupported file type, please make a feature request on GitHub')
+                except Exception as e:
+                        logging.error('Error: {e}'.format(e))
+        else:
+                status_bar.showMessage('No file selected')
+                logging.warning('No file selected')
+
+
+# connect signals and slots
 
 new_action.triggered.connect(new_file)
 open_action.triggered.connect(open_file)
