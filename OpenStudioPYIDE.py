@@ -11,7 +11,8 @@ import argparse
 import datetime
 import gzip
 import configparser
-
+from PyQt6.QtGui import QSyntaxHighlighter, QTextCharFormat, QFont, QColor
+from PyQt6.QtCore import QRegularExpression, Qt
 import requests
 import subprocess
 from PyQt6.QtWidgets import QApplication, QMainWindow, QTextEdit, QFileDialog,QAbstractButton,QAbstractGraphicsShapeItem,QAbstractItemDelegate, QMessageBox
@@ -114,6 +115,7 @@ open_action = file_menu.addAction('Open')
 save_action = file_menu.addAction('Save')
 save_as_action = file_menu.addAction('Save As')
 exit_action = file_menu.addAction('Exit')
+highlight_action = file_menu.addAction('Highlight')
 
 # setup edit menu
 undo_action = edit_menu.addAction('Undo')
@@ -165,6 +167,22 @@ window.setCentralWidget(text_editor)
 # setup status bar
 status_bar = window.statusBar()
 status_bar.showMessage('Ready')
+
+def highlight(text_editor):
+        keyword = QTextCharFormat()
+        keyword.setForeground(QColor(255, 0, 0))
+        keyword.setFontWeight(QFont.Weight.Bold)
+        
+        keyword_patterns = ["\\bFalse\\b", "\\bNone\\b", "\\bTrue\\b", "\\band\\b", "\\bas\\b", "\\bassert\\b", "\\bbreak\\b", "\\bclass\\b", "\\bcontinue\\b", "\\bdef\\b", "\\bdel\\b", "\\belif\\b", "\\belse\\b", "\\bexcept\\b", "\\bfinally\\b", "\\bfor\\b", "\\bfrom\\b", "\\bglobal\\b", "\\bif\\b", "\\bimport\\b", "\\bin\\b", "\\bis\\b", "\\blambda\\b", "\\bnonlocal\\b", "\\bnot\\b", "\\bor\\b", "\\bpass\\b", "\\braise\\b", "\\breturn\\b", "\\btry\\b", "\\bwhile\\b", "\\bwith\\b", "\\byield\\b"]
+        
+        for pattern in keyword_patterns:
+                regex = QRegularExpression(pattern)
+                match = regex.match(text_editor.toPlainText())
+                if match.hasMatch():
+                        text_editor.setCurrentCharFormat(keyword)
+                        text_editor.setPlainText(match.captured(0))
+
+
 
 # setup signals and slots
 def new_file():
@@ -295,6 +313,7 @@ def toggle_status_bar_file():
         logging.info('Toggle Status Bar File')
 
 def toggle_tool_bar_file():
+        highlight(text_editor)
         status_bar.showMessage('Toggle Tool Bar File')
         logging.info('Toggle Tool Bar File')
 
@@ -398,11 +417,6 @@ def update():
                         msg.setInformativeText('Your version: {current_version}\nLatest version: {latest_version}\nPlease update at github.com/Charlie-sans/OpenStudioPyIDE'.format(current_version=current_version, latest_version=latest_version))
                         msg.setIcon(QMessageBox.Icon.Information)
                         msg.exec()
-                        
-
-
-
-
                         #print('There is a new version available, please update')
                         #print('Your version: {current_version}'.format(current_version=current_version))
                         #print('Latest version: {latest_version}'.format(latest_version=latest_version))
@@ -410,6 +424,7 @@ def update():
                         
         else:
                 print('Error getting version information:', r.status_code)
+
 
 
 # connect signals and slots
@@ -460,7 +475,7 @@ zoom_out_action.setShortcut('Ctrl+-')
 toggle_fullscreen_action.setShortcut('F11')
 toggle_line_numbers_action.setShortcut('Ctrl+Shift+L')
 toggle_status_bar_action.setShortcut('Ctrl+Shift+S')
-toggle_tool_bar_action.setShortcut('Ctrl+Shift+T')
+toggle_tool_bar_action.setShortcut('Ctrl+Shift+T') 
 toggle_word_wrap_action.setShortcut('Ctrl+Shift+W')
 
 
