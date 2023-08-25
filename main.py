@@ -11,7 +11,7 @@ import argparse
 import datetime
 import gzip
 import configparser
-from PyQt6.QtWidgets import QApplication, QMainWindow, QTextEdit
+from PyQt6.QtWidgets import QApplication, QMainWindow, QTextEdit, QFileDialog,QAbstractButton,QAbstractGraphicsShapeItem,QAbstractItemDelegate
 #setup varibalbes
 config_file = 'config.ini'
 
@@ -137,8 +137,208 @@ text_editor.setStyleSheet('background-color: {background}; color: {color}; font-
 window.setCentralWidget(text_editor)
 
 
+# setup status bar
+status_bar = window.statusBar()
+status_bar.showMessage('Ready')
+
+# setup signals and slots
+def new_file():
+    status_bar.showMessage('New File')
+    text_editor.clear()
+    logging.info('New File')
+
+    # open the default dialog to create a file then open it
+    dialog = QFileDialog()
+    options = dialog.options()
+    
+    file_name, _ = dialog.getSaveFileName(window, "Create New File", "", "All Files (*);;Text Files (*.txt)", options=options)
+    if file_name:
+        with open(file_name, 'w') as f:
+            f.write('')
+    
+
+def open_file():
+    status_bar.showMessage('Open File')
+    logging.info('Open File')
+
+    # open the default dialog to open a file
+    dialog = QFileDialog()
+    options = dialog.options()
+
+    file_name, _ = dialog.getOpenFileName(window, "Open File", "", "All Files (*);;Text Files (*.txt)", options=options)
+    if file_name:
+        with open(file_name, 'r') as f:
+            text_editor.setPlainText(f.read())
+    
+
+current_file = ''
+
+def save_file():
+    global current_file
+
+    if current_file:
+        with open(current_file, 'w') as f:
+            f.write(text_editor.toPlainText())
+        status_bar.showMessage('File saved')
+        logging.info('File saved')
+    else:
+        dialog = QFileDialog()
+        options = dialog.options()
+
+        file_name, _ = QFileDialog.getSaveFileName(window, "Save File", "", "All Files (*);;Text Files (*.txt)", options=options)
+        if file_name:
+            with open(file_name, 'w') as f:
+                f.write(text_editor.toPlainText())
+            current_file = file_name
+            status_bar.showMessage('File saved')
+            logging.info('File saved')
+
+def save_as_file():
+    status_bar.showMessage('Save As File')
+    logging.info('Save As File')
+
+    # open the default dialog to save a file
+    dialog = QFileDialog()
+    options = dialog.options()
+
+    file_name, _ = dialog.getSaveFileName(window, "Save File", "", "All Files (*);;Text Files (*.txt)", options=options)
+    if file_name:
+        with open(file_name, 'w') as f:
+            f.write(text_editor.toPlainText())
+
+def exit_file():
+    status_bar.showMessage('Exit File')
+    logging.info('Exit File')
+    sys.exit(0)
+
+def undo_file():
+        status_bar.showMessage('Undo File')
+        logging.info('Undo File')
+    
+def redo_file():
+        status_bar.showMessage('Redo File')
+        logging.info('Redo File')
+
+def cut_file():
+        status_bar.showMessage('Cut File')
+        logging.info('Cut File')
+
+def copy_file():
+        status_bar.showMessage('Copy File')
+        logging.info('Copy File')
+
+def paste_file():   
+        status_bar.showMessage('Paste File')
+        logging.info('Paste File')
+
+def find_file():
+        status_bar.showMessage('Find File')
+        logging.info('Find File')
+
+def replace_file():
+        status_bar.showMessage('Replace File')
+        logging.info('Replace File')
+
+def select_all_file():
+        status_bar.showMessage('Select All File')
+        logging.info('Select All File')
+
+def zoom_in_file():
+        status_bar.showMessage('Zoom In File')
+        logging.info('Zoom In File')
+
+def zoom_out_file():
+        status_bar.showMessage('Zoom Out File')
+        logging.info('Zoom Out File')
+        
+def toggle_fullscreen_file():
+        status_bar.showMessage('Toggle Fullscreen File')
+        logging.info('Toggle Fullscreen File')
+
+def toggle_line_numbers_file():
+        status_bar.showMessage('Toggle Line Numbers File')
+        logging.info('Toggle Line Numbers File')
+
+def toggle_status_bar_file():
+        status_bar.showMessage('Toggle Status Bar File')
+        logging.info('Toggle Status Bar File')
+
+def toggle_tool_bar_file():
+        status_bar.showMessage('Toggle Tool Bar File')
+        logging.info('Toggle Tool Bar File')
+
+def toggle_word_wrap_file():
+        status_bar.showMessage('Toggle Word Wrap File')
+        logging.info('Toggle Word Wrap File')
+
+def run_file():
+        status_bar.showMessage('Run File')
+        logging.info('Run File')
+
+def run_selection_file():
+        status_bar.showMessage('Run Selection File')
+        logging.info('Run Selection File')
+
+def run_configuration_file():
+        status_bar.showMessage('Run Configuration File')
+        logging.info('Run Configuration File')
+
+def about_file():
+        status_bar.showMessage('About File')
+        logging.info('About File')
+
+def help_file():
+        status_bar.showMessage('Help File')
+        logging.info('Help File')
+
+new_action.triggered.connect(new_file)
+open_action.triggered.connect(open_file)
+save_action.triggered.connect(save_file)
+save_as_action.triggered.connect(save_as_file)
+exit_action.triggered.connect(exit_file)
+undo_action.triggered.connect(undo_file)
+redo_action.triggered.connect(redo_file)
+cut_action.triggered.connect(cut_file)
+copy_action.triggered.connect(copy_file)
+paste_action.triggered.connect(paste_file)
+find_action.triggered.connect(find_file)
+replace_action.triggered.connect(replace_file)
+select_all_action.triggered.connect(select_all_file)
+zoom_in_action.triggered.connect(zoom_in_file)
+zoom_out_action.triggered.connect(zoom_out_file)
+toggle_fullscreen_action.triggered.connect(toggle_fullscreen_file)
+toggle_line_numbers_action.triggered.connect(toggle_line_numbers_file)
+toggle_status_bar_action.triggered.connect(toggle_status_bar_file)  
+toggle_tool_bar_action.triggered.connect(toggle_tool_bar_file)  
+toggle_word_wrap_action.triggered.connect(toggle_word_wrap_file)
+run_action.triggered.connect(run_file)  
+run_selection_action.triggered.connect(run_selection_file)
+run_configuration_action.triggered.connect(run_configuration_file)
+about_action.triggered.connect(about_file)
+help_action.triggered.connect(help_file)
 
 
+# hotkeys
+new_action.setShortcut('Ctrl+N')
+open_action.setShortcut('Ctrl+O')
+save_action.setShortcut('Ctrl+S')
+save_as_action.setShortcut('Ctrl+Shift+S')
+exit_action.setShortcut('Ctrl+Q')
+undo_action.setShortcut('Ctrl+Z')
+redo_action.setShortcut('Ctrl+Shift+Z')
+cut_action.setShortcut('Ctrl+X')
+copy_action.setShortcut('Ctrl+C')
+paste_action.setShortcut('Ctrl+V')
+find_action.setShortcut('Ctrl+F')
+replace_action.setShortcut('Ctrl+H')
+select_all_action.setShortcut('Ctrl+A')
+zoom_in_action.setShortcut('Ctrl+Shift+=')
+zoom_out_action.setShortcut('Ctrl+-')
+toggle_fullscreen_action.setShortcut('F11')
+toggle_line_numbers_action.setShortcut('Ctrl+Shift+L')
+toggle_status_bar_action.setShortcut('Ctrl+Shift+S')
+toggle_tool_bar_action.setShortcut('Ctrl+Shift+T')
+toggle_word_wrap_action.setShortcut('Ctrl+Shift+W')
 
 
 
