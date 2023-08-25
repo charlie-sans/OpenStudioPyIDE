@@ -1,0 +1,7 @@
+[
+  {
+    "version": "1.0.0",
+    "url": "https://example.com/update-1.0.0.zip",
+    "release_notes": "This is the first release of the application."
+  }
+]

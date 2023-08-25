@@ -11,6 +11,8 @@ import argparse
 import datetime
 import gzip
 import configparser
+
+import requests
 import subprocess
 from PyQt6.QtWidgets import QApplication, QMainWindow, QTextEdit, QFileDialog,QAbstractButton,QAbstractGraphicsShapeItem,QAbstractItemDelegate
 #setup varibalbes
@@ -137,6 +139,7 @@ run_action = run_menu.addAction('Run')
 run_selection_action = run_menu.addAction('Run Selection')
 run_file_action = run_menu.addAction('Run File')
 run_configuration_action = run_menu.addAction('Run Configuration')
+update_action = run_menu.addAction('Update')
 
 # setup help menu
 about_action = help_menu.addAction('About')
@@ -182,8 +185,10 @@ def new_file():
 def open_file(file_name=None):
     status_bar.showMessage('Open File')
     logging.info('Open File')
-
+    global current_file
+    
     if file_name:
+        
         with open(file_name, 'r') as f:
             text_editor.setPlainText(f.read())
     else:
@@ -195,9 +200,9 @@ def open_file(file_name=None):
         if file_name:
             with open(file_name, 'r') as f:
                 text_editor.setPlainText(f.read())
-    
+        
 
-
+global file_name
 
 def save_file():
     global current_file
@@ -355,10 +360,35 @@ def run_file():
                                 # unsupported file type
                                 raise Exception('Unsupported file type, please make a feature request on GitHub')
                 except Exception as e:
-                        logging.error('Error: {e}'.format(e))
+                        logging.error('Error: {}'.format(e))
         else:
                 status_bar.showMessage('No file selected')
                 logging.warning('No file selected')
+
+
+# setup an updater to check if the github repo has a new version in the versions list
+def update():
+    # get the latest version from the server
+    r = requests.get('https://example.com/versions.json')
+    if r.status_code == 200:
+        # parse the JSON data
+        try:
+            versions = json.loads(r.content)
+        except json.JSONDecodeError as e:
+            print('Error decoding JSON data:', e)
+            return
+        # check if the latest version is newer than the current version
+        if current_version in versions:
+            print('You have the latest version')
+        else:
+            latest_version = max(versions)
+            print('There is a new version available, please update')
+            print('Your version: {current_version}'.format(current_version=current_version))
+            print('Latest version: {latest_version}'.format(latest_version=latest_version))
+            print('Please update at github.com/Charlie-sans/OpenStudioPyIDE')
+            print('Or run the updater')
+    else:
+        print('Error getting version information:', r.status_code)
 
 
 # connect signals and slots
@@ -388,7 +418,7 @@ run_selection_action.triggered.connect(run_selection_file)
 run_configuration_action.triggered.connect(run_configuration_file)
 about_action.triggered.connect(about_file)
 help_action.triggered.connect(help_file)
-
+update_action.triggered.connect(update)
 
 # hotkeys
 new_action.setShortcut('Ctrl+N')
