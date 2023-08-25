@@ -14,7 +14,7 @@ import configparser
 
 import requests
 import subprocess
-from PyQt6.QtWidgets import QApplication, QMainWindow, QTextEdit, QFileDialog,QAbstractButton,QAbstractGraphicsShapeItem,QAbstractItemDelegate
+from PyQt6.QtWidgets import QApplication, QMainWindow, QTextEdit, QFileDialog,QAbstractButton,QAbstractGraphicsShapeItem,QAbstractItemDelegate, QMessageBox
 #setup varibalbes
 config_file = 'config.ini'
 current_file = ''
@@ -377,7 +377,12 @@ def update():
                         data = json.loads(r.content)
                         with open('version.txt', 'r') as f:
                                 current_version = f.read().strip()
-                        versions = [v['version'] for v in data]
+                       # get the OpenStudioPYIDE section
+                        # get the Versions array
+                        versions_array = data[0]['Versions']
+
+                                # get a list of all the version numbers
+                        versions = [v['version'] for v in versions_array]
                 except json.JSONDecodeError as e:
                         print('Error decoding JSON data:', e)
                         return
@@ -386,11 +391,23 @@ def update():
                         print('You have the latest version')
                 else:
                         latest_version = max(versions)
-                        print('There is a new version available, please update')
-                        print('Your version: {current_version}'.format(current_version=current_version))
-                        print('Latest version: {latest_version}'.format(latest_version=latest_version))
-                        print('Please update at github.com/Charlie-sans/OpenStudioPyIDE')
-                        print('Or run the updater')
+                        #show a message box to tell the user to update
+                        msg = QMessageBox()
+                        msg.setWindowTitle('Update')
+                        msg.setText('There is a new version available, please update')
+                        msg.setInformativeText('Your version: {current_version}\nLatest version: {latest_version}\nPlease update at github.com/Charlie-sans/OpenStudioPyIDE'.format(current_version=current_version, latest_version=latest_version))
+                        msg.setIcon(QMessageBox.Icon.Information)
+                        msg.exec()
+                        
+
+
+
+
+                        #print('There is a new version available, please update')
+                        #print('Your version: {current_version}'.format(current_version=current_version))
+                        #print('Latest version: {latest_version}'.format(latest_version=latest_version))
+                        #print('Please update at github.com/Charlie-sans/OpenStudioPyIDE')
+                        
         else:
                 print('Error getting version information:', r.status_code)
 
