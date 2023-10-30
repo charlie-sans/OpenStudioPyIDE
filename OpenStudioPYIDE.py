@@ -14,13 +14,25 @@ import configparser
 from PyQt6.QtGui import QSyntaxHighlighter, QTextCharFormat, QFont, QColor
 from PyQt6.QtCore import QRegularExpression, Qt
 import requests
+import asyncio
+from fileexplorer import FileExplorer
 import subprocess
-from PyQt6.QtWidgets import QApplication, QMainWindow, QTextEdit, QFileDialog,QAbstractButton,QAbstractGraphicsShapeItem,QAbstractItemDelegate, QMessageBox
+from PyQt6.QtWidgets import QApplication, QMainWindow, QTextEdit, QFileDialog,QAbstractButton,QAbstractGraphicsShapeItem,QAbstractItemDelegate, QMessageBox, QTextBrowser,QListWidget
 #setup varibalbes
 config_file = 'config.ini'
 current_file = ''
 
+class Highlighter(QSyntaxHighlighter):
+    def __init__(self, parent=None):
+        super(Highlighter, self).__init__(parent)
+        self.highlighting_rules = [(QRegularExpression("\\bOpenStudioPyIDE\\b"), "blue")]
 
+def highlightBlock(self, text):
+        for pattern, format in self.highlighting_rules:
+                expression = QRegularExpression(pattern)
+                matches = list(expression.globalMatch(text))
+                for match in matches:
+                        self.setFormat(match.capturedStart(), match.capturedLength(), format)
 
 
 def print_version():
@@ -40,15 +52,46 @@ parser.add_argument('-d', '--debug', help='debug mode, use only if something wen
 parser.add_argument('-v', '--version', help='prints the version', action='store_true')
 parser.add_argument('-l', '--log', help='log file name, use only if you want to change the log file name')
 
+def console_update():
+       r = requests.get('https://raw.githubusercontent.com/charlie-sans/OpenStudioPyIDE/main/versions.json')
+       if r.status_code == 200:
+                # parse the JSON data
+                try:
+                        data = json.loads(r.content)
+                        
+                        current_version = "v0.1.0"
+                       # get the OpenStudioPYIDE section
+                        # get the Versions array
+                        versions_array = data[0]['Versions']
+
+                                # get a list of all the version numbers
+                        versions = [v['version'] for v in versions_array]
+                except json.JSONDecodeError as e:
+                        print('Error decoding JSON data:', e)
+                        return
+                # check if the latest version is newer than the current version
+                if current_version in versions:
+                        print('You have the latest version')
+                else:
+                       latest_version = max(versions)
+                      
+                       print('There is a new version available, please update')
+                       print('Your version: {current_version}'.format(current_version=current_version))
+                       print('Latest version: {latest_version}'.format(latest_version=latest_version))
+
 
 args = parser.parse_args()
 
 # setup logging
-if args.log:
-    logging.basicConfig(filename="OpenIDE.crsh", level=logging.DEBUG)
-else:
-    print('No log file specified, using default log file name')
+logging.basicConfig(filename="OpenIDE.crsh", level=logging.DEBUG)
 
+if args.version:
+        print('\033[5;34;50m')
+        print_version()
+        console_update()
+        #return terminal color to normal
+        print('\033[0;37;40m')
+        sys.exit(0)
 # setup config file
 try:
     if os.path.exists('config.ini'):
@@ -100,6 +143,8 @@ app = QApplication(sys.argv)
 window = QMainWindow()
 window.setWindowTitle('OpenStudioPyIDE')
 window.setGeometry(100, 100, 800, 600)
+
+# file explorer class
 
 # setup menu bar with submenus
 menu = window.menuBar()
@@ -153,9 +198,13 @@ toolbar.addAction(new_action)
 toolbar.addAction(open_action)
 toolbar.addAction(save_action)
 toolbar.addAction(save_as_action)
-toolbar.addAction(exit_action)
+toolbar.addAction(exit_action) 
 toolbar.addAction(undo_action)
 toolbar.addAction(redo_action)
+
+initui = FileExplorer()
+initui.show()
+
 
 
 # setup text editor
@@ -219,8 +268,25 @@ def open_file(file_name=None):
             with open(file_name, 'r') as f:
                 text_editor.setPlainText(f.read())
         
+def open_folder():
+    status_bar.showMessage('Open Folder')
+    logging.info('Open Folder')
+    global current_file
 
+    # open the default dialog to open a folder
+    dialog = QFileDialog()
+    options = dialog.options()
+
+    file_name = dialog.getExistingDirectory(window, "Open Folder", options=options)
+    if file_name:
+        current_file = file_name
+        status_bar.showMessage('Folder opened')
+        logging.info('Folder opened')
+        # open the file explorer
+        file_explorer = FileExplorer()
+        file_explorer.show()
 global file_name
+
 
 def save_file():
     global current_file
@@ -261,24 +327,37 @@ def exit_file():
     sys.exit(0)
 
 def undo_file():
+        # undo 10 times
+        for i in range(10):
+                text_editor.undo()
         status_bar.showMessage('Undo File')
-        logging.info('Undo File')
-    
+
+        
 def redo_file():
+        for i in range(10):
+                text_editor.redo()
         status_bar.showMessage('Redo File')
-        logging.info('Redo File')
 
 def cut_file():
+        # select the entire file
+        text_editor.selectAll()
+        # cut the file
+        text_editor.cut()
         status_bar.showMessage('Cut File')
-        logging.info('Cut File')
 
 def copy_file():
+        # select the entire file
+        text_editor.selectAll()
+        # copy the file
+        text_editor.copy()
         status_bar.showMessage('Copy File')
-        logging.info('Copy File')
 
-def paste_file():   
+def paste_file(): 
+        text_editor.selectAll()
+        text_editor.cut()  
+        # paste the file
+        text_editor.paste()
         status_bar.showMessage('Paste File')
-        logging.info('Paste File')
 
 def find_file():
         status_bar.showMessage('Find File')
@@ -300,45 +379,45 @@ def zoom_out_file():
         status_bar.showMessage('Zoom Out File')
         logging.info('Zoom Out File')
         
-def toggle_fullscreen_file():
+def  toggle_fullscreen_file():
         status_bar.showMessage('Toggle Fullscreen File')
         logging.info('Toggle Fullscreen File')
 
-def toggle_line_numbers_file():
+def  toggle_line_numbers_file():
         status_bar.showMessage('Toggle Line Numbers File')
         logging.info('Toggle Line Numbers File')
 
-def toggle_status_bar_file():
+def  toggle_status_bar_file():
         status_bar.showMessage('Toggle Status Bar File')
         logging.info('Toggle Status Bar File')
 
-def toggle_tool_bar_file():
+def  toggle_tool_bar_file():
         highlight(text_editor)
         status_bar.showMessage('Toggle Tool Bar File')
         logging.info('Toggle Tool Bar File')
 
-def toggle_word_wrap_file():
+def  toggle_word_wrap_file():
         status_bar.showMessage('Toggle Word Wrap File')
         logging.info('Toggle Word Wrap File')
 
-def run_file():
+def  run_file():
         status_bar.showMessage('Run File')
         logging.info('Run File')
 
-def run_selection_file():
+def  run_selection_file():
         status_bar.showMessage('Run Selection File')
         logging.info('Run Selection File')
 
-def run_configuration_file():
+def  run_configuration_file():
         open_file("config.ini")
         status_bar.showMessage('Run Configuration File')
         logging.info('Run Configuration File')
 
-def about_file():
+def  about_file():
         status_bar.showMessage('About File')
         logging.info('About File')
 
-def help_file():
+def  help_file():
         app = QApplication(sys.argv)
         window = QMainWindow()
         window.setWindowTitle('OpenStudioPyIDE')
@@ -359,7 +438,7 @@ def help_file():
 # setup run file sections for detecting if the file has an extention then run it
 
 
-def run_file():
+def  run_file():
         global current_file
 
         if current_file:
@@ -386,7 +465,7 @@ def run_file():
 
 
 # setup an updater to check if the github repo has a new version in the versions list
-def update():
+def  update():
         global current_version
         # get the latest version from the server
         r = requests.get('https://raw.githubusercontent.com/charlie-sans/OpenStudioPyIDE/main/versions.json')
@@ -481,6 +560,7 @@ toggle_word_wrap_action.setShortcut('Ctrl+Shift+W')
 
 
 
+highlighter = Highlighter(text_editor.document())
 
 window.show()
 sys.exit(app.exec())
